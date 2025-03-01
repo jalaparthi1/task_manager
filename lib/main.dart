@@ -37,6 +37,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
   final TextEditingController _taskController = TextEditingController();
   String _selectedPriority = 'Medium';
   List<Task> _tasks = [];
+  bool _isButtonEnabled = false;
 
   void _addTask() {
     if (_taskController.text.isNotEmpty) {
@@ -44,6 +45,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         _tasks
             .add(Task(name: _taskController.text, priority: _selectedPriority));
         _taskController.clear();
+        _isButtonEnabled = false;
       });
     }
     Navigator.pop(context); // Close dialog after adding task
@@ -134,59 +136,82 @@ class _TaskListScreenState extends State<TaskListScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text("Add New Task", textAlign: TextAlign.center),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _taskController,
-                decoration: InputDecoration(
-                  labelText: "Task Name",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
+        return StatefulBuilder(builder: (context, setDialogState) {
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            title: Text("Add New Task", textAlign: TextAlign.center),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _taskController,
+                  decoration: InputDecoration(
+                    labelText: "Task Name",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onChanged: (text) {
+                    setDialogState(() {
+                      _isButtonEnabled = text.trim().isNotEmpty;
+                    });
+                  },
                 ),
-              ),
-              SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: _selectedPriority,
-                decoration: InputDecoration(
-                  labelText: "Priority",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: _selectedPriority,
+                  decoration: InputDecoration(
+                    labelText: "Priority",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onChanged: (String? newValue) {
+                    setDialogState(() {
+                      _selectedPriority = newValue!;
+                    });
+                  },
+                  items: ['Low', 'Medium', 'High'].map((priority) {
+                    return DropdownMenuItem(
+                      value: priority,
+                      child: Text(priority),
+                    );
+                  }).toList(),
                 ),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedPriority = newValue!;
-                  });
-                },
-                items: ['Low', 'Medium', 'High'].map((priority) {
-                  return DropdownMenuItem(
-                    value: priority,
-                    child: Text(priority),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text("Cancel", style: TextStyle(color: Colors.redAccent)),
-              onPressed: () => Navigator.pop(context),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      child: Text("Cancel",
+                          style:
+                              TextStyle(color: Colors.redAccent, fontSize: 16)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    ElevatedButton(
+                      child: Text(
+                        "Add",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: _isButtonEnabled
+                                ? Colors.white
+                                : Colors.black54),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            _isButtonEnabled ? Colors.indigo : Colors.grey[400],
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: _isButtonEnabled ? _addTask : null,
+                    ),
+                  ],
+                ),
+              ],
             ),
-            ElevatedButton(
-              child: Text("Add"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: _addTask,
-            ),
-          ],
-        );
+          );
+        });
       },
     );
   }
